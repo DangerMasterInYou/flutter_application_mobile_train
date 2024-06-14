@@ -1,0 +1,19 @@
+[
+    {
+        "login": "login1",
+        "password": "111",
+        "permission": 0.9,
+        "hourTrain": 16,
+        "minuteTrain": 0,
+        "week": 3
+    },
+    {
+        "login": "login2",
+        "password": "222",
+        "permission": 0.2,
+        "hourTrain": 16,
+        "minuteTrain": 0,
+        "week": 6
+    }
+]
+ 
