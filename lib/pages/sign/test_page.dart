@@ -45,7 +45,7 @@ class _TestPageState extends State<TestPage> {
       "permission": normalizedKoef,
       "hourTrain": widget.hour,
       "minuteTrain": widget.minute,
-      "week": 3
+      "week": 0
     };
 
     try {

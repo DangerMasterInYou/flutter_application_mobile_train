@@ -11,7 +11,7 @@ class PlanPage extends StatefulWidget {
 }
 
 class _PlanPageState extends State<PlanPage> {
-  late List<charts.Series<WeekPermission, int>> _seriesData;
+  List<charts.Series<WeekPermission, int>> _seriesData = [];
 
   @override
   void initState() {

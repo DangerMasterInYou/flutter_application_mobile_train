@@ -45,5 +45,19 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Приложение требует доступ к вашему местоположению для планирования уведомлений</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Приложение требует доступ к вашему местоположению для планирования уведомлений</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Приложение требует доступ к вашему местоположению для планирования уведомлений</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Приложение требует доступ к вашему местоположению для планирования уведомлений</string>
 </dict>
 </plist>

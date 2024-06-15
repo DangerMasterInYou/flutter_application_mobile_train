@@ -9,6 +9,7 @@ import 'pages/week_train.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:background_fetch/background_fetch.dart';
 
 FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -21,8 +22,16 @@ void main() async {
 
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
+  const IOSInitializationSettings initializationSettingsIOS =
+      IOSInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+    onDidReceiveLocalNotification: onDidReceiveLocalNotification,
+  );
   final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS,
   );
 
   await flutterLocalNotificationsPlugin.initialize(
@@ -32,7 +41,16 @@ void main() async {
     },
   );
 
+  // Register background fetch
+  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+
   runApp(MyApp());
+}
+
+// This is the fetch-event callback.
+void backgroundFetchHeadlessTask(String taskId) async {
+  await updatePermission(); // Call your updatePermission method here
+  BackgroundFetch.finish(taskId);
 }
 
 class MyApp extends StatelessWidget {
@@ -94,47 +112,6 @@ class MyApp extends StatelessWidget {
     }
   }
 
-  Future<void> updatePermission() async {
-    try {
-      final data = await getFromJsonFile("data_user.json");
-      final time = DateTime.now();
-      if (data != null &&
-          time.weekday == DateTime.sunday &&
-          time.hour == 4 &&
-          time.minute == 20) {
-        // Чтение данных из файла
-        Map<String, dynamic> userData = data as Map<String, dynamic>;
-
-        // Логика обновления разрешения
-        int currentWeek = userData['week'];
-        switch ((currentWeek - 1) % 7) {
-          case 0:
-            // 1 неделя: permission = permission
-            userData['permission'] *= 0.8;
-            break;
-          case 1:
-          case 2:
-          case 4:
-          case 5:
-            userData['permission'] *= 1.1;
-            break;
-          case 3:
-            userData['permission'] *= 0.9;
-            break;
-          case 6:
-            break;
-        }
-
-        // Запись обновленных данных в файл
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/data_user.json');
-        await file.writeAsString(jsonEncode(userData));
-      }
-    } catch (e) {
-      print('Error updating permission: $e');
-    }
-  }
-
   // Метод для планирования уведомлений
   void scheduleDailyNotification(int hour, int minute) async {
     final now = DateTime.now();
@@ -159,6 +136,23 @@ class MyApp extends StatelessWidget {
       wakeup: true,
       rescheduleOnReboot: true,
     );
+
+    // Для iOS используем local notifications plugin
+    if (Platform.isIOS) {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        notificationId,
+        'Время тренировки',
+        'Пора тренироваться!',
+        tz.TZDateTime.from(scheduledTime, tz.local),
+        const NotificationDetails(
+          iOS: IOSNotificationDetails(),
+        ),
+        androidAllowWhileIdle: true,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    }
   }
 
   void showNotification() async {
@@ -173,8 +167,12 @@ class MyApp extends StatelessWidget {
         priority: Priority.high,
         showWhen: false,
       );
-      const NotificationDetails platformChannelSpecifics =
-          NotificationDetails(android: androidPlatformChannelSpecifics);
+      const IOSNotificationDetails iosPlatformChannelSpecifics =
+          IOSNotificationDetails();
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iosPlatformChannelSpecifics,
+      );
 
       await flutterLocalNotificationsPlugin.show(
         0,
@@ -191,4 +189,56 @@ class MyApp extends StatelessWidget {
       scheduleDailyNotification(hour, minute);
     }
   }
+}
+
+// Топ-уровневая функция для обновления разрешений
+Future<void> updatePermission() async {
+  try {
+    final data = await getFromJsonFile("data_user.json");
+    final time = DateTime.now();
+    if (data != null &&
+        time.weekday == DateTime.sunday &&
+        time.hour == 4 &&
+        time.minute == 20) {
+      // Чтение данных из файла
+      Map<String, dynamic> userData = data as Map<String, dynamic>;
+
+      // Логика обновления разрешения
+      int currentWeek = userData['week'];
+      switch ((currentWeek - 1) % 7) {
+        case 0:
+          // 1 неделя: permission = permission
+          userData['permission'] *= 0.8;
+          break;
+        case 1:
+        case 2:
+        case 4:
+        case 5:
+          userData['permission'] *= 1.1;
+          break;
+        case 3:
+          userData['permission'] *= 0.9;
+          break;
+        case 6:
+          break;
+      }
+
+      // Запись обновленных данных в файл
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/data_user.json');
+      await file.writeAsString(jsonEncode(userData));
+    }
+  } catch (e) {
+    print('Error updating permission: $e');
+  }
+}
+
+// Обработка уведомлений на iOS
+Future<void> onDidReceiveLocalNotification(
+  int id,
+  String? title,
+  String? body,
+  String? payload,
+) async {
+  // Вы можете реализовать свою логику здесь, например, показать диалоговое окно или перейти на определенную страницу
 }
